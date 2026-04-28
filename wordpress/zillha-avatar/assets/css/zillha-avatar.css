@@ -1,0 +1,441 @@
+/**
+ * Zillha Avatar — single stylesheet shared by both shortcodes.
+ *
+ * Dark navy/charcoal background, gold (#c9a84c) accent. Mobile-responsive.
+ * All selectors are prefixed `.zag-` and scoped under `.zag-wrap` so the
+ * stylesheet cannot leak into the rest of the theme.
+ */
+
+.zag-wrap {
+	--zag-bg: #0f1420;
+	--zag-bg-alt: #161c2c;
+	--zag-surface: #1d2438;
+	--zag-border: rgba(201, 168, 76, 0.28);
+	--zag-text: #f1f3f8;
+	--zag-muted: #99a0b3;
+	--zag-accent: #c9a84c;
+	--zag-accent-hover: #d8b85c;
+	--zag-danger: #ff6b6b;
+	--zag-success: #5ee08a;
+	--zag-radius: 10px;
+	--zag-radius-sm: 6px;
+	--zag-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	box-sizing: border-box;
+	max-width: 560px;
+	margin: 1.25rem 0;
+	padding: 1.5rem;
+	background: linear-gradient(180deg, var(--zag-bg) 0%, var(--zag-bg-alt) 100%);
+	border: 1px solid var(--zag-border);
+	border-radius: var(--zag-radius);
+	color: var(--zag-text);
+	font-family: inherit;
+	font-size: 15px;
+	line-height: 1.45;
+	box-shadow: var(--zag-shadow);
+}
+
+.zag-wrap *,
+.zag-wrap *::before,
+.zag-wrap *::after {
+	box-sizing: border-box;
+}
+
+.zag-wrap [hidden] {
+	display: none !important;
+}
+
+/* ---- Alerts -------------------------------------------------------- */
+
+.zag-alert {
+	margin: 0 0 1rem;
+	padding: 0.75rem 1rem;
+	border-radius: var(--zag-radius-sm);
+	font-size: 14px;
+}
+
+.zag-alert--warning {
+	background: rgba(201, 168, 76, 0.14);
+	border: 1px solid var(--zag-accent);
+	color: var(--zag-accent);
+}
+
+/* ---- Toggle / collapsible (generator) ------------------------------ */
+
+.zag-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	width: 100%;
+	margin: 0;
+	padding: 0.85rem 1rem;
+	background: var(--zag-surface);
+	border: 1px solid var(--zag-border);
+	border-radius: var(--zag-radius-sm);
+	color: var(--zag-text);
+	font-weight: 600;
+	font-size: 15px;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.zag-toggle:hover,
+.zag-toggle:focus-visible {
+	background: rgba(201, 168, 76, 0.12);
+	border-color: var(--zag-accent);
+	outline: none;
+}
+
+.zag-toggle__chevron {
+	width: 10px;
+	height: 10px;
+	border-right: 2px solid var(--zag-accent);
+	border-bottom: 2px solid var(--zag-accent);
+	transform: rotate(45deg);
+	transition: transform 0.2s ease;
+}
+
+.zag-toggle[aria-expanded="true"] .zag-toggle__chevron {
+	transform: rotate(-135deg);
+}
+
+.zag-collapsible {
+	margin-top: 1rem;
+}
+
+/* ---- Form ---------------------------------------------------------- */
+
+.zag-form,
+.zag-upload-form {
+	margin: 0;
+}
+
+.zag-form__subtitle {
+	margin: 0 0 1rem;
+	color: var(--zag-muted);
+	font-size: 14px;
+}
+
+.zag-fieldset {
+	border: 0;
+	margin: 0;
+	padding: 0;
+}
+
+.zag-fieldset[disabled] {
+	opacity: 0.55;
+}
+
+.zag-field {
+	display: block;
+	margin-bottom: 0.9rem;
+}
+
+.zag-label {
+	display: block;
+	margin-bottom: 0.35rem;
+	color: var(--zag-text);
+	font-weight: 600;
+	font-size: 13px;
+	letter-spacing: 0.02em;
+}
+
+.zag-required {
+	color: var(--zag-accent);
+	margin-left: 2px;
+}
+
+.zag-optional {
+	margin-left: 0.35rem;
+	color: var(--zag-muted);
+	font-weight: 400;
+	font-size: 12px;
+}
+
+.zag-input {
+	display: block;
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	background: var(--zag-surface);
+	border: 1px solid var(--zag-border);
+	border-radius: var(--zag-radius-sm);
+	color: var(--zag-text);
+	font: inherit;
+	font-size: 14px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.zag-input::placeholder {
+	color: var(--zag-muted);
+	opacity: 0.7;
+}
+
+.zag-input:focus {
+	outline: none;
+	border-color: var(--zag-accent);
+	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.18);
+}
+
+.zag-textarea {
+	resize: vertical;
+	min-height: 4.5rem;
+}
+
+.zag-select {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 2.25rem;
+	background-image: linear-gradient(45deg, transparent 50%, var(--zag-accent) 50%),
+		linear-gradient(135deg, var(--zag-accent) 50%, transparent 50%);
+	background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+	background-size: 6px 6px;
+	background-repeat: no-repeat;
+}
+
+/* ---- Buttons ------------------------------------------------------- */
+
+.zag-form__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+
+.zag-form__actions--inline {
+	margin-top: 0.75rem;
+}
+
+.zag-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1.1rem;
+	border-radius: var(--zag-radius-sm);
+	border: 1px solid transparent;
+	font: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.zag-btn:focus-visible {
+	outline: 2px solid var(--zag-accent);
+	outline-offset: 2px;
+}
+
+.zag-btn[disabled],
+.zag-btn[aria-busy="true"] {
+	opacity: 0.65;
+	cursor: not-allowed;
+}
+
+.zag-btn--primary {
+	background: var(--zag-accent);
+	color: #1a1306;
+	border-color: var(--zag-accent);
+}
+
+.zag-btn--primary:hover:not([disabled]):not([aria-busy="true"]) {
+	background: var(--zag-accent-hover);
+	border-color: var(--zag-accent-hover);
+}
+
+.zag-btn--secondary {
+	background: transparent;
+	color: var(--zag-accent);
+	border-color: var(--zag-accent);
+}
+
+.zag-btn--secondary:hover:not([disabled]):not([aria-busy="true"]) {
+	background: rgba(201, 168, 76, 0.12);
+}
+
+.zag-btn--ghost {
+	background: transparent;
+	color: var(--zag-muted);
+	border-color: var(--zag-border);
+}
+
+.zag-btn--ghost:hover:not([disabled]):not([aria-busy="true"]) {
+	color: var(--zag-text);
+	border-color: var(--zag-text);
+}
+
+.zag-btn.is-success {
+	background: rgba(94, 224, 138, 0.18);
+	color: var(--zag-success);
+	border-color: var(--zag-success);
+}
+
+.zag-btn.is-error {
+	background: rgba(255, 107, 107, 0.18);
+	color: var(--zag-danger);
+	border-color: var(--zag-danger);
+}
+
+.zag-btn__spinner {
+	display: none;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	animation: zag-spin 0.7s linear infinite;
+}
+
+.zag-btn.is-loading .zag-btn__label {
+	visibility: hidden;
+}
+
+.zag-btn.is-loading .zag-btn__spinner {
+	display: inline-block;
+	position: absolute;
+}
+
+@keyframes zag-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ---- Messages ------------------------------------------------------ */
+
+.zag-message {
+	margin-top: 0.75rem;
+	min-height: 1.25em;
+	font-size: 14px;
+	color: var(--zag-muted);
+}
+
+.zag-message.is-error {
+	color: var(--zag-danger);
+}
+
+.zag-message.is-success {
+	color: var(--zag-success);
+}
+
+/* ---- Result panel (generator) ------------------------------------- */
+
+.zag-result {
+	margin-top: 1rem;
+	padding: 1rem;
+	background: var(--zag-surface);
+	border: 1px solid var(--zag-border);
+	border-radius: var(--zag-radius-sm);
+}
+
+.zag-result__title {
+	margin: 0 0 0.75rem;
+	color: var(--zag-text);
+	font-size: 16px;
+}
+
+.zag-result__preview {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 1rem;
+}
+
+.zag-result__image {
+	display: block;
+	width: 220px;
+	height: 220px;
+	object-fit: cover;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.35);
+	border: 3px solid var(--zag-accent);
+}
+
+.zag-result__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	justify-content: center;
+}
+
+/* ---- Uploader-specific -------------------------------------------- */
+
+.zag-preview-wrap {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 1rem;
+}
+
+.zag-preview {
+	display: block;
+	width: 140px;
+	height: 140px;
+	object-fit: cover;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.35);
+	border: 3px solid var(--zag-accent);
+}
+
+.zag-file-label {
+	display: block;
+	padding: 0.85rem 1rem;
+	background: var(--zag-surface);
+	border: 1px dashed var(--zag-accent);
+	border-radius: var(--zag-radius-sm);
+	cursor: pointer;
+	font-size: 14px;
+	color: var(--zag-text);
+}
+
+.zag-file-label:focus-within {
+	outline: 2px solid var(--zag-accent);
+	outline-offset: 2px;
+}
+
+.zag-file-label__text {
+	display: block;
+	margin-bottom: 0.4rem;
+	font-weight: 600;
+	color: var(--zag-accent);
+	letter-spacing: 0.04em;
+}
+
+.zag-file {
+	display: block;
+	width: 100%;
+	color: var(--zag-muted);
+	font-size: 13px;
+}
+
+.zag-hint {
+	margin: 0.75rem 0 0;
+	font-size: 12px;
+	color: var(--zag-muted);
+}
+
+/* ---- Mobile -------------------------------------------------------- */
+
+@media (max-width: 540px) {
+	.zag-wrap {
+		padding: 1rem;
+		border-radius: var(--zag-radius-sm);
+	}
+
+	.zag-result__image,
+	.zag-preview {
+		width: 160px;
+		height: 160px;
+	}
+
+	.zag-form__actions,
+	.zag-result__actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.zag-btn {
+		justify-content: center;
+	}
+}

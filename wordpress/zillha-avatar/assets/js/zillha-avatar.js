@@ -1,0 +1,425 @@
+/**
+ * Zillha Avatar — single front-end script for both shortcodes.
+ * Vanilla JS, fetch API, no jQuery.
+ */
+(function () {
+	'use strict';
+
+	if (typeof window === 'undefined' || typeof document === 'undefined') {
+		return;
+	}
+
+	var config = window.ZillhaAvatarConfig || null;
+	if (!config || !config.ajaxUrl || !config.nonce) {
+		return;
+	}
+
+	var i18n = config.i18n || {};
+
+	function ready(fn) {
+		if (document.readyState !== 'loading') {
+			fn();
+		} else {
+			document.addEventListener('DOMContentLoaded', fn);
+		}
+	}
+
+	function setButtonState(button, state) {
+		if (!button) {
+			return;
+		}
+		button.classList.remove('is-loading', 'is-success', 'is-error');
+		if (state === 'loading') {
+			button.classList.add('is-loading');
+			button.setAttribute('aria-busy', 'true');
+			button.disabled = true;
+		} else if (state === 'success') {
+			button.classList.add('is-success');
+			button.removeAttribute('aria-busy');
+			button.disabled = false;
+		} else if (state === 'error') {
+			button.classList.add('is-error');
+			button.removeAttribute('aria-busy');
+			button.disabled = false;
+		} else {
+			button.removeAttribute('aria-busy');
+			button.disabled = false;
+		}
+	}
+
+	function setMessage(target, text, kind) {
+		if (!target) {
+			return;
+		}
+		target.textContent = text || '';
+		target.classList.remove('is-error', 'is-success');
+		if (kind === 'error') {
+			target.classList.add('is-error');
+		} else if (kind === 'success') {
+			target.classList.add('is-success');
+		}
+	}
+
+	function postAjax(body) {
+		return fetch(config.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: body
+		}).then(function (response) {
+			return response.json().catch(function () {
+				return { success: false, data: { message: i18n.genericError || 'Something went wrong.' } };
+			}).then(function (json) {
+				return { ok: response.ok, status: response.status, json: json };
+			});
+		});
+	}
+
+	function bustCache(url) {
+		if (!url) { return url; }
+		return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+	}
+
+	/* ----------------------------------------------------------------
+	 * Generator shortcode
+	 * ---------------------------------------------------------------- */
+
+	function initGenerator(root) {
+		var form = root.querySelector('[data-zag-form]');
+		var resultSection = root.querySelector('[data-zag-result]');
+		var preview = root.querySelector('[data-zag-preview]');
+		var downloadLink = root.querySelector('[data-zag-download]');
+		var generateButton = root.querySelector('[data-zag-generate]');
+		var saveButton = root.querySelector('[data-zag-save]');
+		var resetButton = root.querySelector('[data-zag-reset]');
+		var formMessage = root.querySelector('[data-zag-form-message]');
+		var resultMessage = root.querySelector('[data-zag-result-message]');
+		var toggleButton = root.querySelector('[data-zag-toggle]');
+		var collapsible = root.querySelector('[data-zag-collapsible]');
+
+		var LS_KEY = 'zillha_avatar_form_open';
+
+		function isCollapsibleOpen() {
+			return collapsible && !collapsible.hasAttribute('hidden');
+		}
+
+		function openCollapsible() {
+			if (collapsible) { collapsible.removeAttribute('hidden'); }
+			if (toggleButton) { toggleButton.setAttribute('aria-expanded', 'true'); }
+		}
+
+		function closeCollapsible() {
+			if (collapsible) { collapsible.setAttribute('hidden', ''); }
+			if (toggleButton) { toggleButton.setAttribute('aria-expanded', 'false'); }
+		}
+
+		if (toggleButton) {
+			try {
+				if (window.localStorage && localStorage.getItem(LS_KEY) === '1') {
+					openCollapsible();
+				}
+			} catch (e) {}
+
+			toggleButton.addEventListener('click', function () {
+				if (isCollapsibleOpen()) {
+					closeCollapsible();
+					try { localStorage.setItem(LS_KEY, '0'); } catch (e) {}
+				} else {
+					openCollapsible();
+					try { localStorage.setItem(LS_KEY, '1'); } catch (e) {}
+				}
+			});
+		}
+
+		if (!form || !resultSection || !preview || !generateButton) {
+			return;
+		}
+
+		function showForm() {
+			resultSection.hidden = true;
+			form.hidden = false;
+			openCollapsible();
+			setMessage(resultMessage, '');
+		}
+
+		function showResult(dataUri) {
+			preview.src = dataUri;
+			if (downloadLink) {
+				downloadLink.setAttribute('href', dataUri);
+				downloadLink.setAttribute('download', i18n.downloadName || 'zillha-avatar.webp');
+			}
+			form.hidden = true;
+			closeCollapsible();
+			resultSection.hidden = false;
+			setButtonState(saveButton, 'default');
+			setMessage(resultMessage, '');
+		}
+
+		function buildGenerateBody() {
+			var data = new FormData();
+			data.append('action', 'zillha_avatar_generate');
+			data.append('nonce', config.nonce);
+
+			var fields = ['vibe', 'gender', 'hair', 'outfit', 'background', 'mood', 'features', 'art_style'];
+			for (var i = 0; i < fields.length; i++) {
+				var input = form.querySelector('[name="' + fields[i] + '"]');
+				if (input) {
+					data.append(fields[i], input.value || '');
+				}
+			}
+			return data;
+		}
+
+		function validateRequired() {
+			var requiredNames = ['vibe', 'gender', 'hair', 'outfit', 'background', 'mood'];
+			for (var i = 0; i < requiredNames.length; i++) {
+				var input = form.querySelector('[name="' + requiredNames[i] + '"]');
+				if (!input || !input.value || !input.value.trim()) {
+					return input;
+				}
+			}
+			return null;
+		}
+
+		form.addEventListener('submit', function (event) {
+			event.preventDefault();
+
+			var missing = validateRequired();
+			if (missing) {
+				setMessage(formMessage, i18n.fillRequired || 'Please fill in all required fields.', 'error');
+				if (typeof missing.focus === 'function') {
+					missing.focus();
+				}
+				return;
+			}
+
+			setButtonState(generateButton, 'loading');
+			setMessage(formMessage, i18n.generating || 'Generating avatar…');
+
+			postAjax(buildGenerateBody())
+				.then(function (result) {
+					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.data_uri) {
+						setButtonState(generateButton, 'default');
+						setMessage(formMessage, '');
+						showResult(result.json.data.data_uri);
+					} else {
+						setButtonState(generateButton, 'error');
+						var msg = (result.json && result.json.data && result.json.data.message) || i18n.genericError || 'Something went wrong.';
+						setMessage(formMessage, msg, 'error');
+						setTimeout(function () {
+							setButtonState(generateButton, 'default');
+						}, 1800);
+					}
+				})
+				.catch(function () {
+					setButtonState(generateButton, 'error');
+					setMessage(formMessage, i18n.networkError || 'Network error.', 'error');
+					setTimeout(function () {
+						setButtonState(generateButton, 'default');
+					}, 1800);
+				});
+		});
+
+		if (saveButton) {
+			saveButton.addEventListener('click', function () {
+				setButtonState(saveButton, 'loading');
+				setMessage(resultMessage, i18n.saving || 'Saving as profile picture…');
+
+				var data = new FormData();
+				data.append('action', 'zillha_avatar_save_generated');
+				data.append('nonce', config.nonce);
+
+				postAjax(data)
+					.then(function (result) {
+						if (result.ok && result.json && result.json.success) {
+							setButtonState(saveButton, 'success');
+							var msg = (result.json.data && result.json.data.message) || i18n.savedSuccess || 'Saved!';
+							setMessage(resultMessage, msg, 'success');
+							syncUploaderPreview(result.json.data && result.json.data.url);
+						} else {
+							var errMsg;
+							if (result.status === 410) {
+								errMsg = i18n.sessionExpired || (result.json && result.json.data && result.json.data.message);
+							} else {
+								errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+							}
+							setButtonState(saveButton, 'error');
+							setMessage(resultMessage, errMsg || i18n.genericError || 'Error.', 'error');
+							setTimeout(function () {
+								setButtonState(saveButton, 'default');
+							}, 1800);
+						}
+					})
+					.catch(function () {
+						setButtonState(saveButton, 'error');
+						setMessage(resultMessage, i18n.networkError || 'Network error.', 'error');
+						setTimeout(function () {
+							setButtonState(saveButton, 'default');
+						}, 1800);
+					});
+			});
+		}
+
+		if (resetButton) {
+			resetButton.addEventListener('click', function () {
+				preview.removeAttribute('src');
+				if (downloadLink) {
+					downloadLink.setAttribute('href', '#');
+				}
+				setButtonState(saveButton, 'default');
+				setButtonState(generateButton, 'default');
+				setMessage(formMessage, '');
+				showForm();
+			});
+		}
+	}
+
+	/* ----------------------------------------------------------------
+	 * Uploader shortcode
+	 * ---------------------------------------------------------------- */
+
+	function initUploader(root) {
+		var form = root.querySelector('[data-zag-upload-form]');
+		var fileInput = root.querySelector('[data-zag-file]');
+		var preview = root.querySelector('[data-zag-preview-image]');
+		var uploadButton = root.querySelector('[data-zag-upload]');
+		var removeButton = root.querySelector('[data-zag-remove]');
+		var message = root.querySelector('[data-zag-upload-message]');
+		var gravatar = root.getAttribute('data-zag-gravatar') || '';
+
+		if (!form || !fileInput || !preview || !uploadButton) {
+			return;
+		}
+
+		fileInput.addEventListener('change', function () {
+			var file = fileInput.files && fileInput.files[0];
+			if (!file) { return; }
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				preview.src = e.target.result;
+			};
+			reader.readAsDataURL(file);
+		});
+
+		form.addEventListener('submit', function (event) {
+			event.preventDefault();
+
+			if (!fileInput.files || !fileInput.files[0]) {
+				setMessage(message, i18n.pickImage || 'Please choose an image first.', 'error');
+				return;
+			}
+
+			var data = new FormData();
+			data.append('action', 'zillha_avatar_upload');
+			data.append('nonce', config.nonce);
+			data.append('zillha_avatar', fileInput.files[0]);
+
+			setButtonState(uploadButton, 'loading');
+			setMessage(message, i18n.uploading || 'Uploading…');
+
+			postAjax(data)
+				.then(function (result) {
+					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
+						setButtonState(uploadButton, 'success');
+						var url = result.json.data.url;
+						preview.src = bustCache(url);
+						setMessage(message, (result.json.data && result.json.data.message) || i18n.uploadedOk || '', 'success');
+						form.reset();
+						if (removeButton) { removeButton.hidden = false; }
+						syncGeneratorPreview(url);
+						setTimeout(function () {
+							setButtonState(uploadButton, 'default');
+						}, 1800);
+					} else {
+						setButtonState(uploadButton, 'error');
+						var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+						setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+						setTimeout(function () {
+							setButtonState(uploadButton, 'default');
+						}, 1800);
+					}
+				})
+				.catch(function () {
+					setButtonState(uploadButton, 'error');
+					setMessage(message, i18n.networkError || 'Network error.', 'error');
+					setTimeout(function () {
+						setButtonState(uploadButton, 'default');
+					}, 1800);
+				});
+		});
+
+		if (removeButton) {
+			removeButton.addEventListener('click', function () {
+				setButtonState(removeButton, 'loading');
+				setMessage(message, i18n.removing || 'Removing…');
+
+				var data = new FormData();
+				data.append('action', 'zillha_avatar_remove');
+				data.append('nonce', config.nonce);
+
+				postAjax(data)
+					.then(function (result) {
+						if (result.ok && result.json && result.json.success) {
+							setButtonState(removeButton, 'default');
+							removeButton.hidden = true;
+							var fallback = (result.json.data && result.json.data.gravatar) || gravatar;
+							if (fallback) { preview.src = fallback; }
+							setMessage(message, (result.json.data && result.json.data.message) || i18n.removedOk || '', 'success');
+						} else {
+							setButtonState(removeButton, 'error');
+							var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+							setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+							setTimeout(function () {
+								setButtonState(removeButton, 'default');
+							}, 1800);
+						}
+					})
+					.catch(function () {
+						setButtonState(removeButton, 'error');
+						setMessage(message, i18n.networkError || 'Network error.', 'error');
+						setTimeout(function () {
+							setButtonState(removeButton, 'default');
+						}, 1800);
+					});
+			});
+		}
+	}
+
+	/* ----------------------------------------------------------------
+	 * Cross-shortcode preview sync — when one root saves a new avatar,
+	 * keep any other shortcode on the same page in sync so the user
+	 * sees a single, consistent preview.
+	 * ---------------------------------------------------------------- */
+
+	function syncUploaderPreview(url) {
+		if (!url) { return; }
+		var images = document.querySelectorAll('[data-zag-uploader] [data-zag-preview-image]');
+		for (var i = 0; i < images.length; i++) {
+			images[i].src = bustCache(url);
+		}
+		var removeButtons = document.querySelectorAll('[data-zag-uploader] [data-zag-remove]');
+		for (var j = 0; j < removeButtons.length; j++) {
+			removeButtons[j].hidden = false;
+		}
+	}
+
+	function syncGeneratorPreview(url) {
+		if (!url) { return; }
+		var images = document.querySelectorAll('[data-zag-generator] [data-zag-preview]');
+		for (var i = 0; i < images.length; i++) {
+			if (!images[i].getAttribute('src')) {
+				images[i].src = bustCache(url);
+			}
+		}
+	}
+
+	ready(function () {
+		var generators = document.querySelectorAll('[data-zag-generator]');
+		for (var i = 0; i < generators.length; i++) {
+			initGenerator(generators[i]);
+		}
+		var uploaders = document.querySelectorAll('[data-zag-uploader]');
+		for (var j = 0; j < uploaders.length; j++) {
+			initUploader(uploaders[j]);
+		}
+	});
+})();
