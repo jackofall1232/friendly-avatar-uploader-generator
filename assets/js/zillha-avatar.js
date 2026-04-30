@@ -362,7 +362,10 @@
 							setButtonState(removeButton, 'default');
 							removeButton.hidden = true;
 							var fallback = (result.json.data && result.json.data.gravatar) || gravatar;
-							if (fallback) { preview.src = fallback; }
+							if (fallback) {
+								preview.src = fallback;
+								syncRemoveAcrossPage(fallback);
+							}
 							setMessage(message, (result.json.data && result.json.data.message) || i18n.removedOk || '', 'success');
 						} else {
 							setButtonState(removeButton, 'error');
@@ -422,6 +425,34 @@
 		var removeButtons = document.querySelectorAll('[data-zag-profile] [data-zag-profile-remove]');
 		for (var j = 0; j < removeButtons.length; j++) {
 			removeButtons[j].hidden = false;
+		}
+	}
+
+	/**
+	 * Cross-shortcode revert after a successful remove. Updates every
+	 * uploader preview and every profile avatar on the page to the
+	 * fallback (Gravatar) URL and hides all remove buttons. Without this
+	 * a page hosting more than one shortcode would leave stale previews
+	 * and visible remove buttons in the shortcodes that didn't trigger
+	 * the remove call.
+	 */
+	function syncRemoveAcrossPage(fallback) {
+		if (!fallback) { return; }
+		var uploaderImages = document.querySelectorAll('[data-zag-uploader] [data-zag-preview-image]');
+		for (var i = 0; i < uploaderImages.length; i++) {
+			uploaderImages[i].src = fallback;
+		}
+		var uploaderRemoves = document.querySelectorAll('[data-zag-uploader] [data-zag-remove]');
+		for (var j = 0; j < uploaderRemoves.length; j++) {
+			uploaderRemoves[j].hidden = true;
+		}
+		var profileAvatars = document.querySelectorAll('[data-zag-profile] [data-zag-profile-avatar]');
+		for (var k = 0; k < profileAvatars.length; k++) {
+			profileAvatars[k].src = fallback;
+		}
+		var profileRemoves = document.querySelectorAll('[data-zag-profile] [data-zag-profile-remove]');
+		for (var m = 0; m < profileRemoves.length; m++) {
+			profileRemoves[m].hidden = true;
 		}
 	}
 
@@ -511,15 +542,7 @@
 							var fallback = (result.json.data && result.json.data.gravatar) || gravatar;
 							if (fallback) {
 								avatarImg.src = fallback;
-								// Keep any uploader preview on the page in sync.
-								var images = document.querySelectorAll('[data-zag-uploader] [data-zag-preview-image]');
-								for (var i = 0; i < images.length; i++) {
-									images[i].src = fallback;
-								}
-								var siblingRemoves = document.querySelectorAll('[data-zag-uploader] [data-zag-remove]');
-								for (var j = 0; j < siblingRemoves.length; j++) {
-									siblingRemoves[j].hidden = true;
-								}
+								syncRemoveAcrossPage(fallback);
 							}
 							setMessage(message, (result.json.data && result.json.data.message) || i18n.removedOk || '', 'success');
 						} else {
