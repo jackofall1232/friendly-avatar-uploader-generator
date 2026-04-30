@@ -400,6 +400,7 @@
 		for (var j = 0; j < removeButtons.length; j++) {
 			removeButtons[j].hidden = false;
 		}
+		syncProfilePreview(url);
 	}
 
 	function syncGeneratorPreview(url) {
@@ -412,6 +413,165 @@
 		}
 	}
 
+	function syncProfilePreview(url) {
+		if (!url) { return; }
+		var avatars = document.querySelectorAll('[data-zag-profile] [data-zag-profile-avatar]');
+		for (var i = 0; i < avatars.length; i++) {
+			avatars[i].src = bustCache(url);
+		}
+		var removeButtons = document.querySelectorAll('[data-zag-profile] [data-zag-profile-remove]');
+		for (var j = 0; j < removeButtons.length; j++) {
+			removeButtons[j].hidden = false;
+		}
+	}
+
+	/* ----------------------------------------------------------------
+	 * Profile shortcode
+	 * ---------------------------------------------------------------- */
+
+	function initProfile(root) {
+		var avatarImg = root.querySelector('[data-zag-profile-avatar]');
+		var fileInput = root.querySelector('[data-zag-profile-file]');
+		var changeBtn = root.querySelector('[data-zag-profile-change]');
+		var generateBtn = root.querySelector('[data-zag-profile-generate]');
+		var removeBtn = root.querySelector('[data-zag-profile-remove]');
+		var message = root.querySelector('[data-zag-profile-message]');
+		var generatorHost = root.querySelector('[data-zag-profile-generator-host]');
+		var gravatar = root.getAttribute('data-zag-gravatar') || '';
+
+		if (!avatarImg || !fileInput || !changeBtn) {
+			return;
+		}
+
+		if (changeBtn) {
+			changeBtn.addEventListener('click', function () {
+				fileInput.click();
+			});
+		}
+
+		fileInput.addEventListener('change', function () {
+			var file = fileInput.files && fileInput.files[0];
+			if (!file) { return; }
+
+			var data = new FormData();
+			data.append('action', 'zillha_avatar_upload');
+			data.append('nonce', config.nonce);
+			data.append('zillha_avatar', file);
+
+			setButtonState(changeBtn, 'loading');
+			setMessage(message, i18n.uploading || 'Uploading…');
+
+			postAjax(data)
+				.then(function (result) {
+					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
+						var url = result.json.data.url;
+						setButtonState(changeBtn, 'success');
+						avatarImg.src = bustCache(url);
+						setMessage(message, (result.json.data && result.json.data.message) || i18n.uploadedOk || '', 'success');
+						if (removeBtn) { removeBtn.hidden = false; }
+						syncUploaderPreview(url);
+						syncGeneratorPreview(url);
+						setTimeout(function () {
+							setButtonState(changeBtn, 'default');
+						}, 1800);
+					} else {
+						setButtonState(changeBtn, 'error');
+						var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+						setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+						setTimeout(function () {
+							setButtonState(changeBtn, 'default');
+						}, 1800);
+					}
+					fileInput.value = '';
+				})
+				.catch(function () {
+					setButtonState(changeBtn, 'error');
+					setMessage(message, i18n.networkError || 'Network error.', 'error');
+					setTimeout(function () {
+						setButtonState(changeBtn, 'default');
+					}, 1800);
+					fileInput.value = '';
+				});
+		});
+
+		if (removeBtn) {
+			removeBtn.addEventListener('click', function () {
+				setButtonState(removeBtn, 'loading');
+				setMessage(message, i18n.removing || 'Removing…');
+
+				var data = new FormData();
+				data.append('action', 'zillha_avatar_remove');
+				data.append('nonce', config.nonce);
+
+				postAjax(data)
+					.then(function (result) {
+						if (result.ok && result.json && result.json.success) {
+							setButtonState(removeBtn, 'default');
+							removeBtn.hidden = true;
+							var fallback = (result.json.data && result.json.data.gravatar) || gravatar;
+							if (fallback) {
+								avatarImg.src = fallback;
+								// Keep any uploader preview on the page in sync.
+								var images = document.querySelectorAll('[data-zag-uploader] [data-zag-preview-image]');
+								for (var i = 0; i < images.length; i++) {
+									images[i].src = fallback;
+								}
+								var siblingRemoves = document.querySelectorAll('[data-zag-uploader] [data-zag-remove]');
+								for (var j = 0; j < siblingRemoves.length; j++) {
+									siblingRemoves[j].hidden = true;
+								}
+							}
+							setMessage(message, (result.json.data && result.json.data.message) || i18n.removedOk || '', 'success');
+						} else {
+							setButtonState(removeBtn, 'error');
+							var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+							setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+							setTimeout(function () {
+								setButtonState(removeBtn, 'default');
+							}, 1800);
+						}
+					})
+					.catch(function () {
+						setButtonState(removeBtn, 'error');
+						setMessage(message, i18n.networkError || 'Network error.', 'error');
+						setTimeout(function () {
+							setButtonState(removeBtn, 'default');
+						}, 1800);
+					});
+			});
+		}
+
+		if (generateBtn) {
+			generateBtn.addEventListener('click', function () {
+				// Prefer revealing the embedded generator inside the host;
+				// fall back to any other generator already on the page.
+				var target = null;
+				if (generatorHost) {
+					generatorHost.hidden = false;
+					target = generatorHost.querySelector('[data-zag-generator]');
+				}
+				if (!target) {
+					target = document.querySelector('[data-zag-generator]');
+				}
+				if (!target) { return; }
+
+				var toggle = target.querySelector('[data-zag-toggle]');
+				var collapsible = target.querySelector('[data-zag-collapsible]');
+				if (collapsible && collapsible.hasAttribute('hidden')) {
+					if (toggle) {
+						toggle.click();
+					} else {
+						collapsible.removeAttribute('hidden');
+					}
+				}
+
+				if (typeof target.scrollIntoView === 'function') {
+					target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			});
+		}
+	}
+
 	ready(function () {
 		var generators = document.querySelectorAll('[data-zag-generator]');
 		for (var i = 0; i < generators.length; i++) {
@@ -420,6 +580,10 @@
 		var uploaders = document.querySelectorAll('[data-zag-uploader]');
 		for (var j = 0; j < uploaders.length; j++) {
 			initUploader(uploaders[j]);
+		}
+		var profiles = document.querySelectorAll('[data-zag-profile]');
+		for (var k = 0; k < profiles.length; k++) {
+			initProfile(profiles[k]);
 		}
 	});
 })();
