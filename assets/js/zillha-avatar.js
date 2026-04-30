@@ -1,6 +1,6 @@
 /**
- * ZillHa Avatar Generator front-end behaviour.
- * Vanilla JS, no jQuery, no external libraries.
+ * Zillha Avatar — single front-end script for both shortcodes.
+ * Vanilla JS, fetch API, no jQuery.
  */
 (function () {
 	'use strict';
@@ -60,22 +60,6 @@
 		}
 	}
 
-	function buildFormData(form, action) {
-		var data = new FormData();
-		data.append('action', action);
-		data.append('nonce', config.nonce);
-
-		var fields = ['vibe', 'gender', 'hair', 'outfit', 'background', 'mood', 'features', 'art_style'];
-		for (var i = 0; i < fields.length; i++) {
-			var name = fields[i];
-			var input = form.querySelector('[name="' + name + '"]');
-			if (input) {
-				data.append(name, input.value || '');
-			}
-		}
-		return data;
-	}
-
 	function postAjax(body) {
 		return fetch(config.ajaxUrl, {
 			method: 'POST',
@@ -90,7 +74,16 @@
 		});
 	}
 
-	function init(root) {
+	function bustCache(url) {
+		if (!url) { return url; }
+		return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+	}
+
+	/* ----------------------------------------------------------------
+	 * Generator shortcode
+	 * ---------------------------------------------------------------- */
+
+	function initGenerator(root) {
 		var form = root.querySelector('[data-zag-form]');
 		var resultSection = root.querySelector('[data-zag-result]');
 		var preview = root.querySelector('[data-zag-preview]');
@@ -103,11 +96,10 @@
 		var toggleButton = root.querySelector('[data-zag-toggle]');
 		var collapsible = root.querySelector('[data-zag-collapsible]');
 
-		var LS_KEY = 'zillha_form_open';
+		var LS_KEY = 'zillha_avatar_form_open';
 
 		function isCollapsibleOpen() {
-			if (!collapsible) { return false; }
-			return !collapsible.hasAttribute('hidden');
+			return collapsible && !collapsible.hasAttribute('hidden');
 		}
 
 		function openCollapsible() {
@@ -122,7 +114,9 @@
 
 		if (toggleButton) {
 			try {
-				if (localStorage.getItem(LS_KEY) === '1') { openCollapsible(); }
+				if (window.localStorage && localStorage.getItem(LS_KEY) === '1') {
+					openCollapsible();
+				}
 			} catch (e) {}
 
 			toggleButton.addEventListener('click', function () {
@@ -160,6 +154,21 @@
 			setMessage(resultMessage, '');
 		}
 
+		function buildGenerateBody() {
+			var data = new FormData();
+			data.append('action', 'zillha_avatar_generate');
+			data.append('nonce', config.nonce);
+
+			var fields = ['vibe', 'gender', 'hair', 'outfit', 'background', 'mood', 'features', 'art_style'];
+			for (var i = 0; i < fields.length; i++) {
+				var input = form.querySelector('[name="' + fields[i] + '"]');
+				if (input) {
+					data.append(fields[i], input.value || '');
+				}
+			}
+			return data;
+		}
+
 		function validateRequired() {
 			var requiredNames = ['vibe', 'gender', 'hair', 'outfit', 'background', 'mood'];
 			for (var i = 0; i < requiredNames.length; i++) {
@@ -186,7 +195,7 @@
 			setButtonState(generateButton, 'loading');
 			setMessage(formMessage, i18n.generating || 'Generating avatar…');
 
-			postAjax(buildFormData(form, 'zillha_generate_avatar'))
+			postAjax(buildGenerateBody())
 				.then(function (result) {
 					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.data_uri) {
 						setButtonState(generateButton, 'default');
@@ -203,7 +212,7 @@
 				})
 				.catch(function () {
 					setButtonState(generateButton, 'error');
-					setMessage(formMessage, i18n.genericError || 'Something went wrong.', 'error');
+					setMessage(formMessage, i18n.networkError || 'Network error.', 'error');
 					setTimeout(function () {
 						setButtonState(generateButton, 'default');
 					}, 1800);
@@ -216,7 +225,7 @@
 				setMessage(resultMessage, i18n.saving || 'Saving as profile picture…');
 
 				var data = new FormData();
-				data.append('action', 'zillha_save_avatar');
+				data.append('action', 'zillha_avatar_save_generated');
 				data.append('nonce', config.nonce);
 
 				postAjax(data)
@@ -225,6 +234,7 @@
 							setButtonState(saveButton, 'success');
 							var msg = (result.json.data && result.json.data.message) || i18n.savedSuccess || 'Saved!';
 							setMessage(resultMessage, msg, 'success');
+							syncUploaderPreview(result.json.data && result.json.data.url);
 						} else {
 							var errMsg;
 							if (result.status === 410) {
@@ -233,7 +243,7 @@
 								errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
 							}
 							setButtonState(saveButton, 'error');
-							setMessage(resultMessage, errMsg || 'Error.', 'error');
+							setMessage(resultMessage, errMsg || i18n.genericError || 'Error.', 'error');
 							setTimeout(function () {
 								setButtonState(saveButton, 'default');
 							}, 1800);
@@ -241,7 +251,7 @@
 					})
 					.catch(function () {
 						setButtonState(saveButton, 'error');
-						setMessage(resultMessage, i18n.genericError || 'Something went wrong.', 'error');
+						setMessage(resultMessage, i18n.networkError || 'Network error.', 'error');
 						setTimeout(function () {
 							setButtonState(saveButton, 'default');
 						}, 1800);
@@ -263,10 +273,153 @@
 		}
 	}
 
+	/* ----------------------------------------------------------------
+	 * Uploader shortcode
+	 * ---------------------------------------------------------------- */
+
+	function initUploader(root) {
+		var form = root.querySelector('[data-zag-upload-form]');
+		var fileInput = root.querySelector('[data-zag-file]');
+		var preview = root.querySelector('[data-zag-preview-image]');
+		var uploadButton = root.querySelector('[data-zag-upload]');
+		var removeButton = root.querySelector('[data-zag-remove]');
+		var message = root.querySelector('[data-zag-upload-message]');
+		var gravatar = root.getAttribute('data-zag-gravatar') || '';
+
+		if (!form || !fileInput || !preview || !uploadButton) {
+			return;
+		}
+
+		fileInput.addEventListener('change', function () {
+			var file = fileInput.files && fileInput.files[0];
+			if (!file) { return; }
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				preview.src = e.target.result;
+			};
+			reader.readAsDataURL(file);
+		});
+
+		form.addEventListener('submit', function (event) {
+			event.preventDefault();
+
+			if (!fileInput.files || !fileInput.files[0]) {
+				setMessage(message, i18n.pickImage || 'Please choose an image first.', 'error');
+				return;
+			}
+
+			var data = new FormData();
+			data.append('action', 'zillha_avatar_upload');
+			data.append('nonce', config.nonce);
+			data.append('zillha_avatar', fileInput.files[0]);
+
+			setButtonState(uploadButton, 'loading');
+			setMessage(message, i18n.uploading || 'Uploading…');
+
+			postAjax(data)
+				.then(function (result) {
+					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
+						setButtonState(uploadButton, 'success');
+						var url = result.json.data.url;
+						preview.src = bustCache(url);
+						setMessage(message, (result.json.data && result.json.data.message) || i18n.uploadedOk || '', 'success');
+						form.reset();
+						if (removeButton) { removeButton.hidden = false; }
+						syncGeneratorPreview(url);
+						setTimeout(function () {
+							setButtonState(uploadButton, 'default');
+						}, 1800);
+					} else {
+						setButtonState(uploadButton, 'error');
+						var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+						setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+						setTimeout(function () {
+							setButtonState(uploadButton, 'default');
+						}, 1800);
+					}
+				})
+				.catch(function () {
+					setButtonState(uploadButton, 'error');
+					setMessage(message, i18n.networkError || 'Network error.', 'error');
+					setTimeout(function () {
+						setButtonState(uploadButton, 'default');
+					}, 1800);
+				});
+		});
+
+		if (removeButton) {
+			removeButton.addEventListener('click', function () {
+				setButtonState(removeButton, 'loading');
+				setMessage(message, i18n.removing || 'Removing…');
+
+				var data = new FormData();
+				data.append('action', 'zillha_avatar_remove');
+				data.append('nonce', config.nonce);
+
+				postAjax(data)
+					.then(function (result) {
+						if (result.ok && result.json && result.json.success) {
+							setButtonState(removeButton, 'default');
+							removeButton.hidden = true;
+							var fallback = (result.json.data && result.json.data.gravatar) || gravatar;
+							if (fallback) { preview.src = fallback; }
+							setMessage(message, (result.json.data && result.json.data.message) || i18n.removedOk || '', 'success');
+						} else {
+							setButtonState(removeButton, 'error');
+							var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+							setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
+							setTimeout(function () {
+								setButtonState(removeButton, 'default');
+							}, 1800);
+						}
+					})
+					.catch(function () {
+						setButtonState(removeButton, 'error');
+						setMessage(message, i18n.networkError || 'Network error.', 'error');
+						setTimeout(function () {
+							setButtonState(removeButton, 'default');
+						}, 1800);
+					});
+			});
+		}
+	}
+
+	/* ----------------------------------------------------------------
+	 * Cross-shortcode preview sync — when one root saves a new avatar,
+	 * keep any other shortcode on the same page in sync so the user
+	 * sees a single, consistent preview.
+	 * ---------------------------------------------------------------- */
+
+	function syncUploaderPreview(url) {
+		if (!url) { return; }
+		var images = document.querySelectorAll('[data-zag-uploader] [data-zag-preview-image]');
+		for (var i = 0; i < images.length; i++) {
+			images[i].src = bustCache(url);
+		}
+		var removeButtons = document.querySelectorAll('[data-zag-uploader] [data-zag-remove]');
+		for (var j = 0; j < removeButtons.length; j++) {
+			removeButtons[j].hidden = false;
+		}
+	}
+
+	function syncGeneratorPreview(url) {
+		if (!url) { return; }
+		var images = document.querySelectorAll('[data-zag-generator] [data-zag-preview]');
+		for (var i = 0; i < images.length; i++) {
+			if (!images[i].getAttribute('src')) {
+				images[i].src = bustCache(url);
+			}
+		}
+	}
+
 	ready(function () {
-		var roots = document.querySelectorAll('[data-zag-root]');
-		for (var i = 0; i < roots.length; i++) {
-			init(roots[i]);
+		var generators = document.querySelectorAll('[data-zag-generator]');
+		for (var i = 0; i < generators.length; i++) {
+			initGenerator(generators[i]);
+		}
+		var uploaders = document.querySelectorAll('[data-zag-uploader]');
+		for (var j = 0; j < uploaders.length; j++) {
+			initUploader(uploaders[j]);
 		}
 	});
 })();
