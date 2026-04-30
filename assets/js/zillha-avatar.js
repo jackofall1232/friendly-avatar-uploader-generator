@@ -326,6 +326,7 @@
 						form.reset();
 						if (removeButton) { removeButton.hidden = false; }
 						syncGeneratorPreview(url);
+						syncProfilePreview(url);
 						setTimeout(function () {
 							setButtonState(uploadButton, 'default');
 						}, 1800);

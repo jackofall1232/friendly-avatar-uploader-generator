@@ -14,9 +14,8 @@ defined( 'ABSPATH' ) || exit;
  */
 class Zillha_Avatar_Shortcode_Profile {
 
-	const SHORTCODE      = 'zillha_avatar_profile';
-	const FONT_HANDLE    = 'google-fonts-zillha-profile';
-	const FONT_FAMILY    = 'Cinzel';
+	const SHORTCODE   = 'zillha_avatar_profile';
+	const FONT_HANDLE = 'google-fonts-zillha-profile';
 
 	/**
 	 * Wire the shortcode.
@@ -135,14 +134,14 @@ class Zillha_Avatar_Shortcode_Profile {
 								<circle cx="12" cy="13" r="4"></circle>
 							</svg>
 						</span>
+						<input
+							type="file"
+							id="<?php echo esc_attr( $file_input_id ); ?>"
+							class="zag-profile__file"
+							data-zag-profile-file
+							accept="image/jpeg,image/png,image/gif,image/webp"
+						/>
 					</label>
-					<input
-						type="file"
-						id="<?php echo esc_attr( $file_input_id ); ?>"
-						class="zag-profile__file"
-						data-zag-profile-file
-						accept="image/jpeg,image/png,image/gif,image/webp"
-					/>
 				</div>
 
 				<h2 class="zag-profile__name zag-profile__animate" style="--zag-anim-delay: 80ms;">
