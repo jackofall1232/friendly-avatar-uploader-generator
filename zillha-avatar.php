@@ -40,6 +40,7 @@ require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-save.php';
 require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-ajax.php';
 require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-shortcode-generator.php';
 require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-shortcode-uploader.php';
+require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-shortcode-profile.php';
 require_once ZILLHA_AVATAR_DIR . 'includes/class-zillha-avatar-filter.php';
 
 /**
@@ -87,6 +88,13 @@ final class Zillha_Avatar_Plugin {
 	public $shortcode_uploader;
 
 	/**
+	 * Profile shortcode handler.
+	 *
+	 * @var Zillha_Avatar_Shortcode_Profile
+	 */
+	public $shortcode_profile;
+
+	/**
 	 * Avatar URL filter.
 	 *
 	 * @var Zillha_Avatar_Filter
@@ -113,6 +121,7 @@ final class Zillha_Avatar_Plugin {
 		$this->ajax                = new Zillha_Avatar_Ajax();
 		$this->shortcode_generator = new Zillha_Avatar_Shortcode_Generator();
 		$this->shortcode_uploader  = new Zillha_Avatar_Shortcode_Uploader();
+		$this->shortcode_profile   = new Zillha_Avatar_Shortcode_Profile();
 		$this->filter              = new Zillha_Avatar_Filter();
 
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
@@ -147,6 +156,7 @@ final class Zillha_Avatar_Plugin {
 		$this->ajax->register_hooks();
 		$this->shortcode_generator->register_hooks();
 		$this->shortcode_uploader->register_hooks();
+		$this->shortcode_profile->register_hooks();
 		$this->filter->register_hooks();
 
 		if ( ! wp_next_scheduled( self::CLEANUP_HOOK ) ) {
