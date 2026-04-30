@@ -4,6 +4,10 @@
  * Dark navy/charcoal background, gold (#c9a84c) accent. Mobile-responsive.
  * All selectors are prefixed `.zag-` and scoped under `.zag-wrap` so the
  * stylesheet cannot leak into the rest of the theme.
+ *
+ * CSS custom properties on .zag-wrap make every colour and radius value
+ * themeable from a parent rule or an inline style attribute without touching
+ * this file.
  */
 
 .zag-wrap {
@@ -153,22 +157,33 @@
 	font-size: 12px;
 }
 
+/*
+ * All form controls — input[text/url/etc], textarea, select — share these
+ * rules. Explicit color and background-color declarations are required
+ * because browsers apply system colour keywords (ButtonText, Field) to
+ * form controls at the UA stylesheet level, which can override inherited
+ * values even when a parent sets color/background. Declaring them directly
+ * on the element always wins.
+ */
 .zag-input {
 	display: block;
 	width: 100%;
 	padding: 0.6rem 0.75rem;
-	background: var(--zag-surface);
+	background-color: var(--zag-surface); /* explicit — beats UA "Field" */
+	background-image: none;               /* reset any inherited gradient  */
 	border: 1px solid var(--zag-border);
 	border-radius: var(--zag-radius-sm);
-	color: var(--zag-text);
+	color: var(--zag-text);              /* explicit — beats UA "ButtonText" */
 	font: inherit;
 	font-size: 14px;
+	-webkit-text-fill-color: var(--zag-text); /* overrides autofill colour in WebKit */
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .zag-input::placeholder {
 	color: var(--zag-muted);
 	opacity: 0.7;
+	-webkit-text-fill-color: initial; /* let placeholder use its own colour */
 }
 
 .zag-input:focus {
@@ -177,11 +192,13 @@
 	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.18);
 }
 
+/* Textarea-specific */
 .zag-textarea {
 	resize: vertical;
 	min-height: 4.5rem;
 }
 
+/* Select-specific */
 .zag-select {
 	appearance: none;
 	-webkit-appearance: none;
@@ -191,6 +208,7 @@
 	background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
 	background-size: 6px 6px;
 	background-repeat: no-repeat;
+	cursor: pointer;
 }
 
 /* ---- Buttons ------------------------------------------------------- */
@@ -343,12 +361,22 @@
 	margin-bottom: 1rem;
 }
 
+/*
+ * Generator result image: show the full portrait as returned by the webhook.
+ * No border-radius here — the face-bias crop that runs on "Set as profile
+ * picture" produces the final square; the preview intentionally shows the
+ * uncropped source so the user can see the full composition before saving.
+ * The uploader preview (.zag-preview) keeps border-radius: 50% because it
+ * always shows the already-saved, already-cropped square avatar.
+ */
 .zag-result__image {
 	display: block;
-	width: 220px;
-	height: 220px;
-	object-fit: cover;
-	border-radius: 50%;
+	max-width: 100%;
+	max-height: 420px;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+	border-radius: var(--zag-radius);   /* gentle corner, not a circle */
 	background: rgba(0, 0, 0, 0.35);
 	border: 3px solid var(--zag-accent);
 }
@@ -368,6 +396,7 @@
 	margin-bottom: 1rem;
 }
 
+/* Uploader preview always shows the saved, cropped square — stays circular. */
 .zag-preview {
 	display: block;
 	width: 140px;
@@ -423,10 +452,13 @@
 		border-radius: var(--zag-radius-sm);
 	}
 
-	.zag-result__image,
+	.zag-result__image {
+		max-height: 320px;
+	}
+
 	.zag-preview {
-		width: 160px;
-		height: 160px;
+		width: 120px;
+		height: 120px;
 	}
 
 	.zag-form__actions,
