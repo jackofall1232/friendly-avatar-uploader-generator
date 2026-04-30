@@ -1,1 +1,0 @@
-# zillha-avatar-generator
