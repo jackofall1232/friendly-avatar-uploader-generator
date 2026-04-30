@@ -4,24 +4,25 @@ Tags: avatar, gravatar, ai, profile picture, upload, webhook, n8n
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Two front-end shortcodes for setting a user's WordPress avatar: a manual uploader and an AI generator that calls an n8n webhook.
+Three front-end shortcodes for setting a user's WordPress avatar: a manual uploader, an AI generator that calls an n8n webhook, and a full profile experience with a Jcrop crop modal.
 
 == Description ==
 
-Zillha Avatar gives logged-in users two ways to set their profile picture, sharing one save flow and one Gravatar replacement filter.
+Zillha Avatar gives logged-in users three ways to set their profile picture, sharing one save flow and one Gravatar replacement filter.
 
 * `[zillha_avatar_uploader]` — drop on any page to give users a manual upload form. Files are validated, resized and center-cropped to a 400×400 WebP, and stored in the media library.
 * `[zillha_avatar_generator]` — drop on any page to give users an avatar questionnaire. The plugin POSTs the answers to your n8n webhook and previews the returned WebP. The user can download the result or set it as their profile picture.
+* `[zillha_avatar_profile]` — drop on a member-only page to render a cinematic profile hero (display name, handle, member-since pill, post/comment/days stats) plus the full avatar toolkit. Choosing a new image opens a Jcrop modal so the user can pick the region they want to keep before upload; the final avatar is saved as a 400×400 square WebP. If a webhook is configured, the AI generator is embedded inline.
 
 Whichever flow runs last wins: the previous attachment is removed from the media library, and the new one replaces it. The avatar is shown anywhere WordPress calls `get_avatar()` or `get_avatar_url()`, including comments, BuddyPress, theme widgets, the admin bar, and the user profile screen.
 
 **Highlights**
 
-* Two shortcodes, one merged plugin, one shared save flow.
+* Three shortcodes, one merged plugin, one shared save flow.
 * Single user-meta key (`zillha_avatar_attachment_id`) and a single `get_avatar_url` filter at priority 1 — no duplicate hooks.
 * Vanilla front-end JS (no jQuery), one stylesheet, dark theme matching the ZillHa Games aesthetic.
 * Nonce-protected `wp_ajax_` endpoints, logged-in users only.
@@ -40,7 +41,7 @@ An n8n (or compatible) webhook that accepts a `text/plain` POST body and respond
 1. Upload the `zillha-avatar` folder to `/wp-content/plugins/`, or install via the Plugins screen.
 2. Activate the plugin in **Plugins → Installed Plugins**.
 3. (Optional, for the AI generator only.) Go to **Settings → Zillha Avatar** and paste your n8n webhook URL.
-4. Add `[zillha_avatar_uploader]` and/or `[zillha_avatar_generator]` to any page or post.
+4. Add `[zillha_avatar_uploader]`, `[zillha_avatar_generator]`, and/or `[zillha_avatar_profile]` to any page or post.
 
 == Frequently Asked Questions ==
 
@@ -77,6 +78,13 @@ Yes, exactly one — a `wp_remote_post()` to the webhook URL you configure, when
 
 == Changelog ==
 
+= 1.0.1 =
+* New `[zillha_avatar_profile]` shortcode — full cinematic profile hero with display name, handle, member-since pill, post/comment/days stats, and the full avatar toolkit.
+* New Jcrop crop modal in the profile flow: the user can drag a selection over the chosen image before it's uploaded; the cropped region is saved as a 400×400 square WebP. The cropped canvas blob is posted to the existing `zillha_avatar_upload` endpoint, so the server-side flow is unchanged.
+* Jcrop styles and script are enqueued only on pages that render the profile shortcode.
+* Cross-shortcode preview sync — placing more than one shortcode on the same page now keeps every preview in sync after upload, generate, or remove.
+* Admin Settings page documents all three shortcodes, including the new crop step.
+
 = 1.0.0 =
 * Initial release of the merged plugin.
 * `[zillha_avatar_uploader]` and `[zillha_avatar_generator]` shortcodes share a single save flow, single user-meta key, and single `get_avatar_url` filter.
@@ -85,6 +93,9 @@ Yes, exactly one — a `wp_remote_post()` to the webhook URL you configure, when
 * Hourly WP-Cron cleanup of pending generated WebPs older than 10 minutes.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Adds the `[zillha_avatar_profile]` shortcode and a Jcrop free-form crop modal before upload. No database or server changes — purely additive.
 
 = 1.0.0 =
 Initial release of the merged Zillha Avatar plugin (replaces the legacy Friendly Avatar Uploader and ZillHa Avatar Generator plugins).

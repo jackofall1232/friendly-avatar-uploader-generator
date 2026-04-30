@@ -159,7 +159,7 @@ class Zillha_Avatar_Settings {
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-			<p><?php esc_html_e( 'Zillha Avatar gives logged-in users two ways to set their profile picture: a manual upload form and an AI generator that calls an n8n webhook. Both modes share the same media-library save flow and replace Gravatar across the site.', 'zillha-avatar' ); ?></p>
+			<p><?php esc_html_e( 'Zillha Avatar gives logged-in users three ways to manage their profile picture: a manual upload form, an AI generator that calls an n8n webhook, and a full-page profile experience that bundles everything (including a Jcrop crop step before upload). All three modes share the same media-library save flow, save the final avatar as a 400×400 square WebP, and replace Gravatar across the site.', 'zillha-avatar' ); ?></p>
 
 			<form action="options.php" method="post">
 				<?php
@@ -174,18 +174,23 @@ class Zillha_Avatar_Settings {
 			<h2><?php esc_html_e( 'Shortcodes', 'zillha-avatar' ); ?></h2>
 
 			<h3><?php esc_html_e( 'Manual uploader', 'zillha-avatar' ); ?></h3>
-			<p><?php esc_html_e( 'Drop this shortcode on any page where logged-in users should upload their own image. Uploaded files are validated, resized and cropped to a 400×400 square WebP, and saved to the media library.', 'zillha-avatar' ); ?></p>
+			<p><?php esc_html_e( 'Drop this shortcode on any page where logged-in users should upload their own image. Uploaded files are validated, resized and center-cropped to a 400×400 square WebP, and saved to the media library.', 'zillha-avatar' ); ?></p>
 			<p><code>[zillha_avatar_uploader]</code></p>
 
 			<h3><?php esc_html_e( 'AI generator', 'zillha-avatar' ); ?></h3>
 			<p><?php esc_html_e( 'Drop this shortcode on any page where logged-in users should answer the avatar questionnaire. The plugin POSTs the answers to your webhook, previews the returned WebP, then lets the user download it or set it as their profile picture.', 'zillha-avatar' ); ?></p>
 			<p><code>[zillha_avatar_generator]</code></p>
 
-			<p><em><?php esc_html_e( 'Both shortcodes can be placed on the same page. Guests see nothing — they are rendered for logged-in users only.', 'zillha-avatar' ); ?></em></p>
+			<h3><?php esc_html_e( 'Full profile experience', 'zillha-avatar' ); ?></h3>
+			<p><?php esc_html_e( 'Drop this shortcode on a member-only page to render a full cinematic profile hero — display name, handle, member-since pill, post/comment/days stats, plus the complete avatar toolkit. Clicking the avatar opens an interactive Jcrop modal where the user can drag the region they want to keep before upload; the final avatar is saved as a 400×400 square WebP. If a webhook URL is configured, the AI generator is embedded inline.', 'zillha-avatar' ); ?></p>
+			<p><code>[zillha_avatar_profile]</code></p>
+
+			<p><em><?php esc_html_e( 'All three shortcodes can be placed on the same page; their previews stay in sync. Guests see nothing — every shortcode renders only for logged-in users.', 'zillha-avatar' ); ?></em></p>
 
 			<h2><?php esc_html_e( 'How it works', 'zillha-avatar' ); ?></h2>
 			<ol>
-				<li><?php esc_html_e( 'Manual upload: the user picks an image, the browser sends it to admin-ajax.php, and the server resizes and crops it to a 400×400 WebP, sideloads it into the media library, and stores the attachment ID in user meta.', 'zillha-avatar' ); ?></li>
+				<li><?php esc_html_e( 'Manual upload: the user picks an image, the browser sends it to admin-ajax.php, and the server resizes and center-crops it to a 400×400 WebP, sideloads it into the media library, and stores the attachment ID in user meta.', 'zillha-avatar' ); ?></li>
+				<li><?php esc_html_e( 'Profile crop: the user picks an image, the browser shows a Jcrop modal for a free-form selection, draws the crop onto a canvas, and posts the resulting blob to the same upload endpoint — so the server-side flow is unchanged.', 'zillha-avatar' ); ?></li>
 				<li><?php esc_html_e( 'AI generate: the user fills out the questionnaire, the server POSTs a plain-text payload to the webhook (120 second timeout), the returned WebP is held in a private pending file, and the user previews it before deciding to save.', 'zillha-avatar' ); ?></li>
 				<li><?php esc_html_e( 'Whichever flow runs last wins: the previous attachment is removed from the media library and replaced with the new one. The avatar is shown anywhere WordPress calls get_avatar() or get_avatar_url().', 'zillha-avatar' ); ?></li>
 			</ol>

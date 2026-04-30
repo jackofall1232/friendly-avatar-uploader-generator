@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Zillha Avatar
  * Plugin URI:        https://zillha.games/
- * Description:       Two front-end shortcodes for setting a user's avatar: a manual uploader and an AI generator that calls an n8n webhook. Both modes share one media-library save flow and one Gravatar replacement filter.
- * Version:           1.0.0
+ * Description:       Three front-end shortcodes for setting a user's avatar: a manual uploader, an AI generator that calls an n8n webhook, and a full profile experience with a pre-upload crop modal. All modes share one media-library save flow and one Gravatar replacement filter.
+ * Version:           1.0.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            ZillHa Games
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ZILLHA_AVATAR_VERSION', '1.0.0' );
+define( 'ZILLHA_AVATAR_VERSION', '1.0.1' );
 define( 'ZILLHA_AVATAR_FILE', __FILE__ );
 define( 'ZILLHA_AVATAR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ZILLHA_AVATAR_URL', plugin_dir_url( __FILE__ ) );
@@ -222,9 +222,10 @@ final class Zillha_Avatar_Plugin {
 				self::ASSET_HANDLE,
 				'ZillhaAvatarConfig',
 				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( Zillha_Avatar_Ajax::NONCE_ACTION ),
-					'i18n'    => array(
+					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+					'nonce'          => wp_create_nonce( Zillha_Avatar_Ajax::NONCE_ACTION ),
+					'maxUploadBytes' => (int) ZILLHA_AVATAR_MAX_UPLOAD_BYTES,
+					'i18n'           => array(
 						'generating'     => __( 'Generating avatar… this can take up to two minutes.', 'zillha-avatar' ),
 						'saving'         => __( 'Saving as profile picture…', 'zillha-avatar' ),
 						'uploading'      => __( 'Uploading…', 'zillha-avatar' ),
@@ -239,6 +240,10 @@ final class Zillha_Avatar_Plugin {
 						'fillRequired'   => __( 'Please fill in all required fields.', 'zillha-avatar' ),
 						'pickImage'      => __( 'Please choose an image first.', 'zillha-avatar' ),
 						'remove'         => __( 'Remove custom avatar', 'zillha-avatar' ),
+						/* translators: %d: maximum upload size in megabytes. */
+						'fileTooLarge'   => __( 'Image is too large. Maximum size is %d MB.', 'zillha-avatar' ),
+						'fileWrongType'  => __( 'Please choose a JPEG, PNG, GIF, or WebP image.', 'zillha-avatar' ),
+						'fileReadError'  => __( 'Could not read the image file.', 'zillha-avatar' ),
 					),
 				)
 			);

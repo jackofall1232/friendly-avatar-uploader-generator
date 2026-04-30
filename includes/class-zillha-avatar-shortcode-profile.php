@@ -42,6 +42,11 @@ class Zillha_Avatar_Shortcode_Profile {
 		Zillha_Avatar_Plugin::enqueue_assets();
 		$this->enqueue_display_font();
 
+		// Jcrop ships with WordPress core. Loading these handles only on pages
+		// that actually render the profile shortcode keeps the front-end lean.
+		wp_enqueue_style( 'jcrop' );
+		wp_enqueue_script( 'jcrop' );
+
 		ob_start();
 		$this->render_template();
 		return (string) ob_get_clean();
@@ -228,6 +233,39 @@ class Zillha_Avatar_Shortcode_Profile {
 						<?php echo do_shortcode( '[zillha_avatar_generator]' ); ?>
 					</div>
 				<?php endif; ?>
+			</div>
+
+			<div
+				class="zag-profile-crop-modal"
+				id="<?php echo esc_attr( 'zag-crop-modal-' . $uid ); ?>"
+				role="dialog"
+				aria-modal="true"
+				aria-label="<?php esc_attr_e( 'Crop your avatar', 'zillha-avatar' ); ?>"
+				data-zag-crop-modal
+				hidden
+			>
+				<div class="zag-profile-crop-modal__backdrop" data-zag-crop-backdrop></div>
+				<div class="zag-profile-crop-modal__box">
+					<h2 class="zag-profile-crop-modal__title">
+						<?php esc_html_e( 'Crop your avatar', 'zillha-avatar' ); ?>
+					</h2>
+					<div class="zag-profile-crop-modal__stage">
+						<img class="zag-profile-crop-modal__img" src="" alt="" data-zag-crop-img />
+					</div>
+					<p class="zag-profile-crop-modal__hint">
+						<?php esc_html_e( 'Drag to select the area you want to use. Your avatar will be saved as a square.', 'zillha-avatar' ); ?>
+					</p>
+					<div class="zag-profile-crop-modal__actions">
+						<button type="button" class="zag-btn zag-btn--primary" data-zag-crop-confirm>
+							<span class="zag-btn__label"><?php esc_html_e( 'Apply &amp; Upload', 'zillha-avatar' ); ?></span>
+							<span class="zag-btn__spinner" aria-hidden="true"></span>
+						</button>
+						<button type="button" class="zag-btn zag-btn--ghost" data-zag-crop-cancel>
+							<?php esc_html_e( 'Cancel', 'zillha-avatar' ); ?>
+						</button>
+					</div>
+					<div class="zag-message" data-zag-crop-message role="status" aria-live="polite"></div>
+				</div>
 			</div>
 		</div>
 		<?php
