@@ -222,9 +222,10 @@ final class Zillha_Avatar_Plugin {
 				self::ASSET_HANDLE,
 				'ZillhaAvatarConfig',
 				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( Zillha_Avatar_Ajax::NONCE_ACTION ),
-					'i18n'    => array(
+					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+					'nonce'          => wp_create_nonce( Zillha_Avatar_Ajax::NONCE_ACTION ),
+					'maxUploadBytes' => (int) ZILLHA_AVATAR_MAX_UPLOAD_BYTES,
+					'i18n'           => array(
 						'generating'     => __( 'Generating avatar… this can take up to two minutes.', 'zillha-avatar' ),
 						'saving'         => __( 'Saving as profile picture…', 'zillha-avatar' ),
 						'uploading'      => __( 'Uploading…', 'zillha-avatar' ),
@@ -239,6 +240,10 @@ final class Zillha_Avatar_Plugin {
 						'fillRequired'   => __( 'Please fill in all required fields.', 'zillha-avatar' ),
 						'pickImage'      => __( 'Please choose an image first.', 'zillha-avatar' ),
 						'remove'         => __( 'Remove custom avatar', 'zillha-avatar' ),
+						/* translators: %d: maximum upload size in megabytes. */
+						'fileTooLarge'   => __( 'Image is too large. Maximum size is %d MB.', 'zillha-avatar' ),
+						'fileWrongType'  => __( 'Please choose a JPEG, PNG, GIF, or WebP image.', 'zillha-avatar' ),
+						'fileReadError'  => __( 'Could not read the image file.', 'zillha-avatar' ),
 					),
 				)
 			);

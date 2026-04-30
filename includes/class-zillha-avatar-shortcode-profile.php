@@ -253,7 +253,7 @@ class Zillha_Avatar_Shortcode_Profile {
 						<img class="zag-profile-crop-modal__img" src="" alt="" data-zag-crop-img />
 					</div>
 					<p class="zag-profile-crop-modal__hint">
-						<?php esc_html_e( 'Drag to select the area you want to use. Any shape is fine.', 'zillha-avatar' ); ?>
+						<?php esc_html_e( 'Drag to select the area you want to use. Your avatar will be saved as a square.', 'zillha-avatar' ); ?>
 					</p>
 					<div class="zag-profile-crop-modal__actions">
 						<button type="button" class="zag-btn zag-btn--primary" data-zag-crop-confirm>

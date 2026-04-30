@@ -480,6 +480,10 @@
 		var jcropApi     = null;
 		var srcNaturalW  = 0;
 		var srcNaturalH  = 0;
+		var cropUploading = false;
+
+		var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+		var maxBytes      = (config && typeof config.maxUploadBytes === 'number') ? config.maxUploadBytes : 0;
 
 		if (!avatarImg || !fileInput || !changeBtn) {
 			return;
@@ -538,8 +542,10 @@
 			jcropApi = null;
 			srcNaturalW = 0;
 			srcNaturalH = 0;
+			cropUploading = false;
 			if (cropModal) { cropModal.setAttribute('hidden', ''); }
 			if (cropImg) { cropImg.removeAttribute('src'); }
+			if (cropCancel) { cropCancel.disabled = false; }
 			fileInput.value = '';
 			setMessage(message, '');
 			setMessage(cropMessage, '');
@@ -574,11 +580,19 @@
 			var ctx = canvas.getContext('2d');
 			ctx.drawImage(cropImg, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
+			cropUploading = true;
+			if (cropCancel) { cropCancel.disabled = true; }
 			setButtonState(cropConfirm, 'loading');
 			setMessage(cropMessage, i18n.uploading || 'Uploading…');
 
+			function endUpload() {
+				cropUploading = false;
+				if (cropCancel) { cropCancel.disabled = false; }
+			}
+
 			canvas.toBlob(function (blob) {
 				if (!blob) {
+					endUpload();
 					setButtonState(cropConfirm, 'error');
 					setMessage(cropMessage, i18n.genericError || 'Something went wrong.', 'error');
 					setTimeout(function () { setButtonState(cropConfirm, 'default'); }, 1800);
@@ -592,6 +606,7 @@
 
 				postAjax(data)
 					.then(function (result) {
+						endUpload();
 						if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
 							var url = result.json.data.url;
 							avatarImg.src = bustCache(url);
@@ -609,6 +624,7 @@
 						}
 					})
 					.catch(function () {
+						endUpload();
 						setButtonState(cropConfirm, 'error');
 						setMessage(cropMessage, i18n.networkError || 'Network error.', 'error');
 						setTimeout(function () { setButtonState(cropConfirm, 'default'); }, 1800);
@@ -620,16 +636,41 @@
 			var file = fileInput.files && fileInput.files[0];
 			if (!file) { return; }
 
+			setMessage(message, '');
+
+			if (file.type && ALLOWED_TYPES.indexOf(file.type) === -1) {
+				setMessage(message, i18n.fileWrongType || 'Please choose a JPEG, PNG, GIF, or WebP image.', 'error');
+				fileInput.value = '';
+				return;
+			}
+
+			if (maxBytes > 0 && file.size > maxBytes) {
+				var mb = Math.max(1, Math.floor(maxBytes / (1024 * 1024)));
+				var tmpl = i18n.fileTooLarge || 'Image is too large. Maximum size is %d MB.';
+				setMessage(message, tmpl.replace('%d', String(mb)), 'error');
+				fileInput.value = '';
+				return;
+			}
+
 			var reader = new FileReader();
 			reader.onload = function (e) {
 				openCropModal(e.target.result);
 			};
+			reader.onerror = function () {
+				closeCropModal();
+				setMessage(message, i18n.fileReadError || 'Could not read the image file.', 'error');
+			};
 			reader.readAsDataURL(file);
 		});
 
+		function onCancelOrBackdrop() {
+			if (cropUploading) { return; }
+			closeCropModal();
+		}
+
 		if (cropConfirm)  { cropConfirm.addEventListener('click', applyCrop); }
-		if (cropCancel)   { cropCancel.addEventListener('click', closeCropModal); }
-		if (cropBackdrop) { cropBackdrop.addEventListener('click', closeCropModal); }
+		if (cropCancel)   { cropCancel.addEventListener('click', onCancelOrBackdrop); }
+		if (cropBackdrop) { cropBackdrop.addEventListener('click', onCancelOrBackdrop); }
 
 		if (removeBtn) {
 			removeBtn.addEventListener('click', function () {

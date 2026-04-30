@@ -159,7 +159,7 @@ class Zillha_Avatar_Settings {
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-			<p><?php esc_html_e( 'Zillha Avatar gives logged-in users three ways to manage their profile picture: a manual upload form, an AI generator that calls an n8n webhook, and a full-page profile experience that bundles everything (including a free-form Jcrop crop step before upload). All three modes share the same media-library save flow and replace Gravatar across the site.', 'zillha-avatar' ); ?></p>
+			<p><?php esc_html_e( 'Zillha Avatar gives logged-in users three ways to manage their profile picture: a manual upload form, an AI generator that calls an n8n webhook, and a full-page profile experience that bundles everything (including a Jcrop crop step before upload). All three modes share the same media-library save flow, save the final avatar as a 400×400 square WebP, and replace Gravatar across the site.', 'zillha-avatar' ); ?></p>
 
 			<form action="options.php" method="post">
 				<?php
@@ -182,7 +182,7 @@ class Zillha_Avatar_Settings {
 			<p><code>[zillha_avatar_generator]</code></p>
 
 			<h3><?php esc_html_e( 'Full profile experience', 'zillha-avatar' ); ?></h3>
-			<p><?php esc_html_e( 'Drop this shortcode on a member-only page to render a full cinematic profile hero — display name, handle, member-since pill, post/comment/days stats, plus the complete avatar toolkit. Clicking the avatar opens an interactive Jcrop modal where the user can drag a free-form selection before the cropped image is uploaded. If a webhook URL is configured, the AI generator is embedded inline.', 'zillha-avatar' ); ?></p>
+			<p><?php esc_html_e( 'Drop this shortcode on a member-only page to render a full cinematic profile hero — display name, handle, member-since pill, post/comment/days stats, plus the complete avatar toolkit. Clicking the avatar opens an interactive Jcrop modal where the user can drag the region they want to keep before upload; the final avatar is saved as a 400×400 square WebP. If a webhook URL is configured, the AI generator is embedded inline.', 'zillha-avatar' ); ?></p>
 			<p><code>[zillha_avatar_profile]</code></p>
 
 			<p><em><?php esc_html_e( 'All three shortcodes can be placed on the same page; their previews stay in sync. Guests see nothing — every shortcode renders only for logged-in users.', 'zillha-avatar' ); ?></em></p>

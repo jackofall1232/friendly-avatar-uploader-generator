@@ -16,7 +16,7 @@ Zillha Avatar gives logged-in users three ways to set their profile picture, sha
 
 * `[zillha_avatar_uploader]` — drop on any page to give users a manual upload form. Files are validated, resized and center-cropped to a 400×400 WebP, and stored in the media library.
 * `[zillha_avatar_generator]` — drop on any page to give users an avatar questionnaire. The plugin POSTs the answers to your n8n webhook and previews the returned WebP. The user can download the result or set it as their profile picture.
-* `[zillha_avatar_profile]` — drop on a member-only page to render a cinematic profile hero (display name, handle, member-since pill, post/comment/days stats) plus the full avatar toolkit. Choosing a new image opens a free-form Jcrop modal so the user can pick exactly which region to upload before the crop is sent to the server. If a webhook is configured, the AI generator is embedded inline.
+* `[zillha_avatar_profile]` — drop on a member-only page to render a cinematic profile hero (display name, handle, member-since pill, post/comment/days stats) plus the full avatar toolkit. Choosing a new image opens a Jcrop modal so the user can pick the region they want to keep before upload; the final avatar is saved as a 400×400 square WebP. If a webhook is configured, the AI generator is embedded inline.
 
 Whichever flow runs last wins: the previous attachment is removed from the media library, and the new one replaces it. The avatar is shown anywhere WordPress calls `get_avatar()` or `get_avatar_url()`, including comments, BuddyPress, theme widgets, the admin bar, and the user profile screen.
 
@@ -80,7 +80,7 @@ Yes, exactly one — a `wp_remote_post()` to the webhook URL you configure, when
 
 = 1.0.1 =
 * New `[zillha_avatar_profile]` shortcode — full cinematic profile hero with display name, handle, member-since pill, post/comment/days stats, and the full avatar toolkit.
-* New Jcrop crop modal in the profile flow: the user can drag a free-form selection over the chosen image before it's uploaded. The cropped canvas blob is posted to the existing `zillha_avatar_upload` endpoint, so the server-side flow is unchanged.
+* New Jcrop crop modal in the profile flow: the user can drag a selection over the chosen image before it's uploaded; the cropped region is saved as a 400×400 square WebP. The cropped canvas blob is posted to the existing `zillha_avatar_upload` endpoint, so the server-side flow is unchanged.
 * Jcrop styles and script are enqueued only on pages that render the profile shortcode.
 * Cross-shortcode preview sync — placing more than one shortcode on the same page now keeps every preview in sync after upload, generate, or remove.
 * Admin Settings page documents all three shortcodes, including the new crop step.
