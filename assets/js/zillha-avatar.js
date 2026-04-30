@@ -471,6 +471,16 @@
 		var generatorHost = root.querySelector('[data-zag-profile-generator-host]');
 		var gravatar = root.getAttribute('data-zag-gravatar') || '';
 
+		var cropModal    = root.querySelector('[data-zag-crop-modal]');
+		var cropImg      = cropModal ? cropModal.querySelector('[data-zag-crop-img]') : null;
+		var cropConfirm  = cropModal ? cropModal.querySelector('[data-zag-crop-confirm]') : null;
+		var cropCancel   = cropModal ? cropModal.querySelector('[data-zag-crop-cancel]') : null;
+		var cropBackdrop = cropModal ? cropModal.querySelector('[data-zag-crop-backdrop]') : null;
+		var cropMessage  = cropModal ? cropModal.querySelector('[data-zag-crop-message]') : null;
+		var jcropApi     = null;
+		var srcNaturalW  = 0;
+		var srcNaturalH  = 0;
+
 		if (!avatarImg || !fileInput || !changeBtn) {
 			return;
 		}
@@ -481,50 +491,144 @@
 			});
 		}
 
+		function openCropModal(dataUrl) {
+			if (!cropModal || !cropImg) { return; }
+
+			setMessage(cropMessage, '');
+			setButtonState(cropConfirm, 'default');
+
+			cropImg.onload = function () {
+				cropModal.removeAttribute('hidden');
+
+				srcNaturalW = cropImg.naturalWidth;
+				srcNaturalH = cropImg.naturalHeight;
+
+				var imgW = cropImg.width || cropImg.offsetWidth;
+				var imgH = cropImg.height || cropImg.offsetHeight;
+
+				var selSize = Math.round(Math.min(imgW, imgH) * 0.8);
+				var selX    = Math.round((imgW - selSize) / 2);
+				var selY    = Math.round((imgH - selSize) / 2);
+
+				if (jcropApi && typeof jcropApi.destroy === 'function') {
+					jcropApi.destroy();
+					jcropApi = null;
+				}
+
+				if (window.jQuery && typeof window.jQuery.fn.Jcrop === 'function') {
+					window.jQuery(cropImg).Jcrop(
+						{
+							setSelect: [selX, selY, selX + selSize, selY + selSize],
+							bgColor:   'black',
+							bgOpacity: 0.55,
+							minSize:   [40, 40]
+						},
+						function () { jcropApi = this; }
+					);
+				}
+			};
+
+			cropImg.src = dataUrl;
+		}
+
+		function closeCropModal() {
+			if (jcropApi && typeof jcropApi.destroy === 'function') {
+				jcropApi.destroy();
+			}
+			jcropApi = null;
+			srcNaturalW = 0;
+			srcNaturalH = 0;
+			if (cropModal) { cropModal.setAttribute('hidden', ''); }
+			if (cropImg) { cropImg.removeAttribute('src'); }
+			fileInput.value = '';
+			setMessage(message, '');
+			setMessage(cropMessage, '');
+			setButtonState(cropConfirm, 'default');
+		}
+
+		function applyCrop() {
+			if (!jcropApi) { closeCropModal(); return; }
+
+			var coords = jcropApi.tellSelect();
+			if (!coords || !coords.w || !coords.h) { closeCropModal(); return; }
+
+			var bounds = jcropApi.getBounds();
+			var jcropW = bounds[0];
+			var jcropH = bounds[1];
+			if (!srcNaturalW || !srcNaturalH || !jcropW || !jcropH) {
+				setMessage(cropMessage, i18n.genericError || 'Something went wrong.', 'error');
+				return;
+			}
+
+			var scaleX = srcNaturalW / jcropW;
+			var scaleY = srcNaturalH / jcropH;
+
+			var cropW = Math.round(coords.w * scaleX);
+			var cropH = Math.round(coords.h * scaleY);
+			var cropX = Math.round(coords.x * scaleX);
+			var cropY = Math.round(coords.y * scaleY);
+
+			var canvas = document.createElement('canvas');
+			canvas.width  = cropW;
+			canvas.height = cropH;
+			var ctx = canvas.getContext('2d');
+			ctx.drawImage(cropImg, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+			setButtonState(cropConfirm, 'loading');
+			setMessage(cropMessage, i18n.uploading || 'Uploading…');
+
+			canvas.toBlob(function (blob) {
+				if (!blob) {
+					setButtonState(cropConfirm, 'error');
+					setMessage(cropMessage, i18n.genericError || 'Something went wrong.', 'error');
+					setTimeout(function () { setButtonState(cropConfirm, 'default'); }, 1800);
+					return;
+				}
+
+				var data = new FormData();
+				data.append('action', 'zillha_avatar_upload');
+				data.append('nonce', config.nonce);
+				data.append('zillha_avatar', blob, 'avatar-crop.jpg');
+
+				postAjax(data)
+					.then(function (result) {
+						if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
+							var url = result.json.data.url;
+							avatarImg.src = bustCache(url);
+							syncUploaderPreview(url);
+							syncProfilePreview(url);
+							if (removeBtn) { removeBtn.hidden = false; }
+							closeCropModal();
+							setMessage(message, (result.json.data && result.json.data.message) || i18n.uploadedOk || '', 'success');
+						} else {
+							var msg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
+							setButtonState(cropConfirm, 'error');
+							setMessage(cropMessage, msg || i18n.genericError || 'Error.', 'error');
+							setTimeout(function () { setButtonState(cropConfirm, 'default'); }, 1800);
+						}
+					})
+					.catch(function () {
+						setButtonState(cropConfirm, 'error');
+						setMessage(cropMessage, i18n.networkError || 'Network error.', 'error');
+						setTimeout(function () { setButtonState(cropConfirm, 'default'); }, 1800);
+					});
+			}, 'image/jpeg', 0.92);
+		}
+
 		fileInput.addEventListener('change', function () {
 			var file = fileInput.files && fileInput.files[0];
 			if (!file) { return; }
 
-			var data = new FormData();
-			data.append('action', 'zillha_avatar_upload');
-			data.append('nonce', config.nonce);
-			data.append('zillha_avatar', file);
-
-			setButtonState(changeBtn, 'loading');
-			setMessage(message, i18n.uploading || 'Uploading…');
-
-			postAjax(data)
-				.then(function (result) {
-					if (result.ok && result.json && result.json.success && result.json.data && result.json.data.url) {
-						var url = result.json.data.url;
-						setButtonState(changeBtn, 'success');
-						avatarImg.src = bustCache(url);
-						setMessage(message, (result.json.data && result.json.data.message) || i18n.uploadedOk || '', 'success');
-						if (removeBtn) { removeBtn.hidden = false; }
-						syncUploaderPreview(url);
-						syncGeneratorPreview(url);
-						setTimeout(function () {
-							setButtonState(changeBtn, 'default');
-						}, 1800);
-					} else {
-						setButtonState(changeBtn, 'error');
-						var errMsg = (result.json && result.json.data && result.json.data.message) || i18n.genericError;
-						setMessage(message, errMsg || i18n.genericError || 'Error.', 'error');
-						setTimeout(function () {
-							setButtonState(changeBtn, 'default');
-						}, 1800);
-					}
-					fileInput.value = '';
-				})
-				.catch(function () {
-					setButtonState(changeBtn, 'error');
-					setMessage(message, i18n.networkError || 'Network error.', 'error');
-					setTimeout(function () {
-						setButtonState(changeBtn, 'default');
-					}, 1800);
-					fileInput.value = '';
-				});
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				openCropModal(e.target.result);
+			};
+			reader.readAsDataURL(file);
 		});
+
+		if (cropConfirm)  { cropConfirm.addEventListener('click', applyCrop); }
+		if (cropCancel)   { cropCancel.addEventListener('click', closeCropModal); }
+		if (cropBackdrop) { cropBackdrop.addEventListener('click', closeCropModal); }
 
 		if (removeBtn) {
 			removeBtn.addEventListener('click', function () {
