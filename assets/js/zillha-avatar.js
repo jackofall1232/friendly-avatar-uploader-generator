@@ -596,6 +596,7 @@
 							var url = result.json.data.url;
 							avatarImg.src = bustCache(url);
 							syncUploaderPreview(url);
+							syncGeneratorPreview(url);
 							syncProfilePreview(url);
 							if (removeBtn) { removeBtn.hidden = false; }
 							closeCropModal();

@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Zillha Avatar
  * Plugin URI:        https://zillha.games/
- * Description:       Two front-end shortcodes for setting a user's avatar: a manual uploader and an AI generator that calls an n8n webhook. Both modes share one media-library save flow and one Gravatar replacement filter.
- * Version:           0.1.1
+ * Description:       Three front-end shortcodes for setting a user's avatar: a manual uploader, an AI generator that calls an n8n webhook, and a full profile experience with a pre-upload crop modal. All modes share one media-library save flow and one Gravatar replacement filter.
+ * Version:           1.0.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            ZillHa Games
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'ZILLHA_AVATAR_VERSION', '0.1.1' );
+define( 'ZILLHA_AVATAR_VERSION', '1.0.1' );
 define( 'ZILLHA_AVATAR_FILE', __FILE__ );
 define( 'ZILLHA_AVATAR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ZILLHA_AVATAR_URL', plugin_dir_url( __FILE__ ) );

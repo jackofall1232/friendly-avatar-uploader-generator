@@ -4,7 +4,7 @@ Tags: avatar, gravatar, ai, profile picture, upload, webhook, n8n
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ Whichever flow runs last wins: the previous attachment is removed from the media
 
 **Highlights**
 
-* Two shortcodes, one merged plugin, one shared save flow.
+* Three shortcodes, one merged plugin, one shared save flow.
 * Single user-meta key (`zillha_avatar_attachment_id`) and a single `get_avatar_url` filter at priority 1 — no duplicate hooks.
 * Vanilla front-end JS (no jQuery), one stylesheet, dark theme matching the ZillHa Games aesthetic.
 * Nonce-protected `wp_ajax_` endpoints, logged-in users only.
@@ -78,7 +78,7 @@ Yes, exactly one — a `wp_remote_post()` to the webhook URL you configure, when
 
 == Changelog ==
 
-= 0.1.1 =
+= 1.0.1 =
 * New `[zillha_avatar_profile]` shortcode — full cinematic profile hero with display name, handle, member-since pill, post/comment/days stats, and the full avatar toolkit.
 * New Jcrop crop modal in the profile flow: the user can drag a free-form selection over the chosen image before it's uploaded. The cropped canvas blob is posted to the existing `zillha_avatar_upload` endpoint, so the server-side flow is unchanged.
 * Jcrop styles and script are enqueued only on pages that render the profile shortcode.
@@ -94,7 +94,7 @@ Yes, exactly one — a `wp_remote_post()` to the webhook URL you configure, when
 
 == Upgrade Notice ==
 
-= 0.1.1 =
+= 1.0.1 =
 Adds the `[zillha_avatar_profile]` shortcode and a Jcrop free-form crop modal before upload. No database or server changes — purely additive.
 
 = 1.0.0 =
